@@ -419,10 +419,17 @@ class LTTextLineHorizontal(LTTextLine):
         return
 
     def add(self, obj):
+        # add space if letter is too far apart
+        # TODO: should consider when last character itself is space
         if isinstance(obj, LTChar) and self.word_margin:
+            # check margin
             margin = self.word_margin * max(obj.width, obj.height)
             if self._x1 < obj.x0 - margin:
-                LTContainer.add(self, LTAnno(' '))
+                #print('add space annotation:', self, f'"{self.get_text()}"')
+                last_char = self.get_text()[-1]
+                if last_char != ' ':
+                    #print('add space annotation:', f'"{self.get_text()}" + "{obj.get_text()}"')
+                    LTContainer.add(self, LTAnno(' '))
         self._x1 = obj.x1
         LTTextLine.add(self, obj)
         return
@@ -643,22 +650,27 @@ class LTLayoutContainer(LTContainer):
                     and obj0.vdistance(obj1) \
                     < max(obj0.height, obj1.height) * laparams.char_margin
 
+                # is aligned and currently has line. add to line
                 if ((halign and isinstance(line, LTTextLineHorizontal)) or
                         (valign and isinstance(line, LTTextLineVertical))):
 
                     line.add(obj1)
+                # not aligned but currnetly has line. yield line and start new
                 elif line is not None:
                     yield line
                     line = None
                 else:
+                    # valign. build new LTTextLineVertical
                     if valign and not halign:
                         line = LTTextLineVertical(laparams.word_margin)
                         line.add(obj0)
                         line.add(obj1)
+                    # halign. build new LTTextLineHorizontal
                     elif halign and not valign:
                         line = LTTextLineHorizontal(laparams.word_margin)
                         line.add(obj0)
                         line.add(obj1)
+                    # default
                     else:
                         line = LTTextLineHorizontal(laparams.word_margin)
                         line.add(obj0)
@@ -792,10 +804,12 @@ class LTLayoutContainer(LTContainer):
             obj.analyze(laparams)
         if not textobjs:
             return
+        # group text objects into textlines
         textlines = list(self.group_objects(laparams, textobjs))
         (empties, textlines) = fsplit(lambda obj: obj.is_empty(), textlines)
         for obj in empties:
             obj.analyze(laparams)
+        # group textlines into textboxes
         textboxes = list(self.group_textlines(laparams, textlines))
         if laparams.boxes_flow is None:
             for textbox in textboxes:
