@@ -57,12 +57,12 @@ def extract_text_to_fp(inf, outfp, output_type='text', codec='utf-8',
 
     rsrcmgr = PDFResourceManager(caching=not disable_caching)
 
+    if outfp == sys.stdout:
+        outfp = sys.stdout.buffer
+
     if output_type == 'text':
         device = TextConverter(rsrcmgr, outfp, codec=codec, laparams=laparams,
                                imagewriter=imagewriter)
-
-    if outfp == sys.stdout:
-        outfp = sys.stdout.buffer
 
     if output_type == 'xml':
         device = XMLConverter(rsrcmgr, outfp, codec=codec, laparams=laparams,
