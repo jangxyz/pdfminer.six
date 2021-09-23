@@ -73,6 +73,7 @@ class ImageWriter:
         (width, height) = image.srcsize
 
         is_jbig2 = self.is_jbig2_image(image)
+        is_jpx = self.is_jpx_image(image)
         ext = self._get_image_extension(image, width, height, is_jbig2)
         name, path = self._create_unique_image_name(self.outdir,
                                                     image.name, ext)
@@ -87,6 +88,11 @@ class ImageWriter:
                 i = Image.open(ifp)
                 i = ImageChops.invert(i)
                 i = i.convert('RGB')
+                i.save(fp, 'JPEG')
+            elif is_jpx:
+                from PIL import Image
+                ifp = BytesIO(raw_data)
+                i = Image.open(ifp)
                 i.save(fp, 'JPEG')
             else:
                 fp.write(raw_data)
@@ -138,9 +144,19 @@ class ImageWriter:
         return is_jbig2
 
     @staticmethod
+    def is_jpx_image(image):
+        filters = image.stream.get_filters()
+        for filter_name, _params in filters:
+            if filter_name in LITERALS_JPX_DECODE:
+                return True
+        return False
+
+    @staticmethod
     def _get_image_extension(image, width, height, is_jbig2):
         filters = image.stream.get_filters()
         if len(filters) == 1 and filters[0][0] in LITERALS_DCT_DECODE:
+            ext = '.jpg'
+        elif len(filters) == 1 and filters[0][0] in LITERALS_JPX_DECODE:
             ext = '.jpg'
         elif is_jbig2:
             ext = '.jb2'
