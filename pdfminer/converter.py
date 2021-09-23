@@ -1,6 +1,7 @@
 import logging
 import re
 import sys
+import os
 from .pdfdevice import PDFTextDevice
 from .pdffont import PDFUnicodeNotDefined
 from .layout import LTContainer
@@ -329,9 +330,10 @@ class HTMLConverter(PDFConverter):
     def place_image(self, item, borderwidth, x, y, w, h):
         if self.imagewriter is not None:
             name = self.imagewriter.export_image(item)
+            filepath = os.path.join(self.imagewriter.outdir, name)
             s = '<img src="%s" border="%d" style="position:absolute; ' \
                 'left:%dpx; top:%dpx;" width="%d" height="%d" />\n' % \
-                (enc(name), borderwidth, x * self.scale,
+                (enc(filepath), borderwidth, x * self.scale,
                  (self._yoffset - y) * self.scale, w * self.scale,
                  h * self.scale)
             self.write(s)
@@ -572,7 +574,7 @@ class XMLConverter(PDFConverter):
                 if self.imagewriter is not None:
                     name = self.imagewriter.export_image(item)
                     self.write('<image src="%s" width="%d" height="%d" />\n' %
-                               (enc(name), item.width, item.height))
+                               (enc(filepath), item.width, item.height))
                 else:
                     self.write('<image width="%d" height="%d" />\n' %
                                (item.width, item.height))
